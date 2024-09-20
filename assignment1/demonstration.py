@@ -36,7 +36,7 @@ plt.ylabel('|| w_ml - w_t ||')
 plt.title('Error vs Iterations for Gradient Descent')
 plt.show()
 
-sgd=StochasticGradientDescent(step_size=0.0025, iterations=1000)
+sgd=StochasticGradientDescent(step_size=None, iterations=10000)
 sgd.fit(X, y, w_ml=w_ml)
 print('Stochastic Gradient Descent Solution:')
 print('\tW1=%1.3f'%sgd.coef_[0])
@@ -54,10 +54,17 @@ plt.show()
 alphas = np.arange(0, 40, 1)
 errors=[]
 for alpha in alphas:
-    errors.append(cross_validate(X, y, RidgeGD(alpha, 0.0001, 1000), 0.2))
-print('Best regularization parameter value:')
-print('\tValue=%d'%alphas[np.argmin(errors)])
-print('\tCorresponding MSE=%1.3f'%np.min(errors))
+    errors.append(cross_validate(X, y, RidgeGD(alpha, 0.0001, 1000), 0.2, 3))
+best_alpha=alphas[np.argmin(errors)]
+rgd=RidgeGD(regu=3, step_size=0.0001, iterations=1000)
+rgd.fit(X, y)
+print('Best Ridge Gradient Descent Solution:')
+print('\tW1=%1.3f'%rgd.coef_[0])
+print('\tW2=%1.3f'%rgd.coef_[1])
+print('\tIntercept=%1.3f'%rgd.coef_[2])
+print('\tRegularization Parameter Value=%d'%best_alpha)
+print()
+
 print()
 plt.plot(alphas, errors)
 plt.xlabel('Regularization Lambda')
@@ -69,8 +76,6 @@ plt.show()
 testing_data=pd.read_csv(test_path, header=None)
 X_test, y_test=testing_data.drop(labels=2, axis=1), testing_data[2]
 predictions_ml=reg.predict(X_test) #predictions according to OLS
-rgd=RidgeGD(regu=3, step_size=0.0001, iterations=1000)
-rgd.fit(X, y)
 predictions_ridge=rgd.predict(X_test) # predictions according to Ridge
 
 print('Comparing Performance of OLS and Ridge:')

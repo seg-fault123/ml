@@ -78,7 +78,7 @@ class StochasticGradientDescent:
         result=self.coef_.copy()
         index=np.arange(stop=X.shape[0])
         if self.step_size is None:
-            calc_step_size=lambda x: 1/(1+x) 
+            calc_step_size=lambda x: 1/((1+x)*100) 
         if w_ml is None:
             w_ml=np.zeros(shape=self.coef_.shape) 
         while (not converged) and (self.actual_iterations<self.iterations):
@@ -162,8 +162,8 @@ class KernelRegression:
 
 
 ## function to generate splits in cross validation
-def genrate_splits(n, test_size):
-   rng=np.random.default_rng(seed=3)
+def genrate_splits(n, test_size, random_seed=None):
+   rng=np.random.default_rng(seed=random_seed)
    index=np.arange(n)
    sorted_index=index.copy()
    rng.shuffle(index)
@@ -177,10 +177,10 @@ def genrate_splits(n, test_size):
    
 
 ## function to run cross validation on a model
-def cross_validate(X, y, model, test_size):
+def cross_validate(X, y, model, test_size, random_seed=None):
    iterations=0
    errors=0
-   for train_index, validation_index in genrate_splits(X.shape[0], test_size):
+   for train_index, validation_index in genrate_splits(X.shape[0], test_size, random_seed):
       X_train, X_valid, y_train, y_valid=X.loc[train_index, :], X.loc[validation_index, :], y[train_index], y[validation_index]
       model.fit(X_train, y_train)
       predictions=model.predict(X_valid)

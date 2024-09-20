@@ -1,0 +1,209 @@
+\documentclass[a4paper]{article}
+\usepackage{graphicx} 
+\usepackage[export]{adjustbox}
+\graphicspath{{images/}}
+
+\title{Report of Assignment 1, Foundation of Machine Learning (DA5400)}
+\author{Harshil Pandey, DA24C006}
+
+
+\begin{document}
+\maketitle
+
+\section{Details of the Submission}
+\begin{itemize}
+    \item \verb|models.py| file contains all the source code used to implement the solutions to the questions.
+    
+    \item \verb|demonstration.py| file uses the models implemented in \verb|models.py| to demonstrate and arrive at the solution. To run \verb|demonstration.py|, keep the \verb|models.py| in the same directory and change the \verb|train_path| and \verb|test_pat| variables defined in the \verb|demonstration.py| file to the corresponding path of the training and testing data.
+
+    \item Libraries Used: 
+    \begin{itemize}
+        \item \verb|numpy|: for matrix and numerical operations
+
+        \item \verb|pandas|: for loading and storing data in matrix format.
+    
+        \item \verb|matplotlib|: for plotting the graphs
+        
+        \item \verb|seaborn|: for plotting the graphs
+    \end{itemize}
+
+    \item The measure of error used is the Mean Squared Error explained later.    
+\end{itemize}
+
+\section{Details of the Source Code}
+The theory discussed in the below subsections (except \verb|KernelRegression| subsection) that refers to $X$ as the data matrix, assumes that the bias column has been added. However, none of the methods that accept the '\verb|X|' parameter assume that. In all such methods, the intercept column is added internally. So while discussing the theoretical aspects the reader should assume that the bias column is added (except \verb|KernelRegression| subsection), but while calling the methods, the data matrix should not have the bias column as the methods take care of it.
+\begin{itemize}
+    \item \verb|mse(y_true, y_pred)|: This function calculates the Mean Squared Error of the predictions. 
+    \begin{itemize}
+        \item \verb|y_true| parameter is the true output variable.
+        
+        \item \verb|y_pred| parameter is the predicted output variable.
+        
+        \item Both parameters are expected to be \verb|numpy arrays|.
+        
+        \item The formula is $\frac{1}{n} \displaystyle \sum_{i=1}^n (y_i - \hat{y}_i)^2$. Where $y_i$ and $\hat{y}_i$ represent the true output variable and predicted output variable for the $i^{th}$ data point respectively. 
+    \end{itemize}
+
+    \item \verb|OLS|: This class implements the analytical solution of Linear Regression.
+    \begin{itemize}
+        \item The hypothesis of this method is given by $y= \displaystyle \sum_{j=1}^d w_jx_j + w_0$. Where $w_j$ is the weight associated with the $j^{th}$ feature and $w_0$ is the intercept value. The goal is to find the best weights such that the predictions ($\hat{y}$) calculated using these weights produce the minimum Mean Squared Error.
+        
+        \item \verb|fit(X, y)| method calculates the weights ($w_j$s). \verb|X| is the data matrix that has data points as rows and features as columns, expected to be a \verb|numpy ndarray| or a \verb|pandas dataframe|. \verb|y| is the output variable which is expected to be a \verb|numpy array| or  a \verb|pandas series|.
+        
+        \item The weights are calculated and stored in the \verb|coef_| variable of the class. The last entry in \verb|coef_| is the intercept value. The formula to calculate the weights is given by:  \begin{center}
+            $w_{ML} = (X^T X)^{-1} X^T y$. 
+        \end{center}
+     
+        \item \verb|predict(X)| method calculates the predictions for data stored in \verb|X|. \verb|X| is the data matrix that has data points as rows and features as columns, expected to be a \verb|numpy ndarray| or a \verb|pandas dataframe|.
+        
+        \item The predictions are calculated by the formula: $Xw_{ML}$
+    \end{itemize}
+
+    \item \verb|GradientDescent|: This class implements the gradient descent solution to Linear Regression.
+    \begin{itemize}
+        \item The class expects \verb|step_size| and \verb|iterations| from the user that corresponds to the gradient step size and total iterations to be performed. Similar to \verb|OLS| class, the weights are stored in the \verb|coef_| variable of the class.
+    
+        \item \verb|gradient(X, y)| method calculates the gradient based on the data and current weights. The requirements for \verb|X| and \verb|y| are the same as in \verb|OLS|. The formula of the gradient is given by: $\nabla f(w)=X^T Xw - X^T y$.
+        
+        \item The update rule is given by : $w_{t+1}=w_t - \eta \nabla f(w_t)$. Where $\eta$ is the step size.
+        
+        \item \verb|fit(X, y, w_ml)| implements the gradient descent algorithm as given by the above update rule. The requirements for \verb|X| and \verb|y| are the same as in \verb|OLS|. Along with this, this method also finds the error between $w_{ML}$ and $w_t$ for each iteration, where $w_{ML}$ represents the solution given by \verb|OLS| method. The errors are calculated as $||w_{ML}-w_t||_2$ and stored in \verb|errors| variable of the class.
+        
+        \item \verb|predict(X)| method calculates the predictions similar to the \verb|OLS| class. The predictions are calculated as $X\hat{w}$, where $\hat{w}$ is the weight vector obtained after running the gradient descent algorithm.
+    \end{itemize}
+
+    \item \verb|StochasticGradientDescent|: This class implements the stochastic gradient descent method for Linear Regression. The batch size is taken as 100 data points at a time. The class design is the same as \verb|GradientDescent| class. The only difference lies in the \verb|fit(X, y, w_ml)| method. \\
+    \verb|fit(X, y, w_ml)| implements the technique and calculates the weights. Instead of taking the whole dataset for the gradient update rule, it takes a random batch of 100 data points to calculate the gradient. The program is such that it ensures that each data point is selected in the training batch at least once. Similar to \verb|GradientDescent| class, this method also stores the error between $w_{ML}$ and $w_t$ for each iteration in the \verb|errors| variable. After completing the iterations, the final weights are stored as the average of all the intermediate weights learned in each iteration. The formula is given by: $\hat{w}=\displaystyle \frac{1}{T} \sum_{t=1}^T w_t$.
+
+    \item \verb|RidgeGD|: This class implements the Ridge Gradient Descent Algorithm. The class design is very similar to \verb|GradientDescent| class, some key differences are highlighted below:
+    \begin{itemize}
+        \item In addition to \verb|step_size| and \verb|iterations| this class also expects the \verb|regu| parameter which corresponds to the regularization parameter in Ridge Regression.
+        
+        \item \verb|gradient(X, y)| method calculates the gradient of the objective function of the Ridge formulation. Hence the formula is different as compared to \verb|GradientDescent| and given by:
+        \begin{center}
+            $\nabla f(w)= X^T X w - X^T y + \lambda w$
+        \end{center}
+        The update rule is the same as \verb|GradientDescent|.
+    \end{itemize}
+
+    \item \verb|KernelRegression|: This class implements the Polynomial Kernel Regression algorithm.
+    \begin{itemize}
+        \item The class expects a \verb|degree| parameter that specifies the degree of the kernel function. The class also stores the data passed during the \verb|fit(X, y)| method in the \verb|data| variable, as it will be required for calculating the Kernel Matrix. \verb|X| and \verb|y| have the same requirements as in \verb|OLS|.
+        
+        \item The formula for calculating the kernel function for two vectors is given by: $k(x_1, x_2)=(x_1^T x_2 + 1)^p$ where $p$ is the degree specified by the user. This value is the same as taking dot product in higher dimension hence, $k(x_1, x_2)=\phi(x_1)^T \phi(x_2)$ where $\phi(x)$ represents the function that transforms $x$ to a higher dimension.
+        
+        \item Instead of calculating the optimal weights in the higher dimension, we calculate coefficients of combinations (given by $\alpha$) of data points that lead us to the optimal weights. So $\hat{w}= \phi(X)^T \alpha$
+        
+        \item The formula for calculating $\alpha$ is given by: $\alpha=K^{-1}y$, where K is the kernel matrix of the training data which is in turn calculated as \\ 
+        $K_{ij}=k(x_i, x_j)$ where $x_i$ and $x_j$ are the $i^{th}$ and $j^{th}$ data points of the data matrix.
+        
+        \item \verb|calc_kernel(X_new)| method calculates the kernel matrix corresponding to \verb|X_new| which represents a data matrix similar to \verb|X| that was passed to \verb|fit(X, y)| method. The formula for calculating the kernel matrix is given by: $K^{new}_{ij}= (<X^{new}_i, X_j> + 1)^p = k(X^{new}_i, X_j)$, where $<X^{new}_i, X_j>$ is the dot product between the $i^{th}$ data point (row) of $X^{new}$, and $j^{th}$ data point (row) of $X$ (data matrix on which the model has been trained). In \verb|numpy| the whole matrix is calculated easily by \verb|(X_new @ X.T + 1)**p|. This method is also used to calculate $K$.
+    
+        \item The prediction is made using $\alpha$ and $K^{new}$ with the formula: $K^{new} \alpha$
+    
+        \item \verb|fit(X, y)| method calculates the $\alpha$.
+        
+        \item \verb|predict(X)| method calculates the predictions by calculating $K^{new}$ and using the already calculated $\alpha$.
+    \end{itemize}
+
+    \item \verb|generate_splits(n, test_size)|: This method generates integer indices for training and testing subsets of data of size \verb|n| with \verb|test_size| representing the fraction of data points that go into the testing subset. This method is used in the cross-validation procedure to generate splits for data. This method returns an iterator instead of returning all the splits at once. The method ensures that each data point goes into the testing set only once. The number of splits is determined accordingly.
+
+    \item \verb|cross_validate(X, y, model, test_size)|: This method implements the cross validation process. \verb|X| and \verb|y| represent the data matrix and output vector with the usual requirement as in previous methods.
+    \begin{itemize}
+        \item  \verb|model| is a parameter that accepts the model that needs to be cross-validated for example an \verb|OLS| or \verb|RidgeGD| instance.
+    
+        \item \verb|test_size| represents what fraction of data points go into each validation subset.
+    
+        \item The error(MSE) on the validation subset for each iteration is calculated and the average of the errors is returned.
+    \end{itemize}
+\end{itemize}
+
+\section{Observations and Inferences}
+\subsection{Analytical Solution}
+The weights corresponding to features given by the analytical solution are as follows:
+$w_{ML}=(1.766, \ 3.522, \ 9.894)$ \\
+the first, second, and third component is the weight corresponding to the first, second, and third (intercept added by algorithm) features of the data respectively. Hence the function learned is: $y=1.766x_1+3.522x_2+9.894$
+
+\subsection{Gradient Descent Solution}
+The algorithm was run for 200 iterations with a constant step size of 0.0001. The weights corresponding to features given by gradient descent are as follows:
+\begin{center}
+    $w_{GD}=(1.766, \ 3.522, \ 9.894)$
+\end{center}
+We observe that the solution is the same as that of the analytical method. \\
+\textit{Figure 1} shows a graph that plots the error between $w_{ML}$ and $w_t$ as a function of $t$. Here, $w_t$ represents the weights obtained in $t_{th}$ iteration and the error is calculated as: $||w_{ML}-w_t||_2$ \\
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.65\linewidth]{gd_iterations.png}
+    \label{gradient: iteration_plot}
+    \caption{Convergence of Gradient Descent}
+\end{figure}
+It is observed that as the iterations increase, the error between $w_{ML}$ and $w_t$ reduces smoothly. The reduction is much higher in the earlier iterations and after 100 iterations the error is very close to 0 and the reduction is negligible. This can be attributed to the fact that as $w_t$ becomes closer and closer to $w_{ML}$, the gradient ($\nabla f(w_t)$) approaches to zero vector, due to which the change caused in $w_t$ according to the gradient descent update rule is negligible.
+
+\subsection{Stochastic Gradient Descent Solution}
+The algorithm was run for 10000 iterations with a step size that depends on the iteration number, the formula for the same is:
+\begin{center}
+    $\eta= \frac{1}{100t}$
+\end{center}
+This was done to ensure that in later iterations when $w_t$ is closer to $w_{ML}$, the algorithm makes smaller updates. This reduces the chance of diverging from $w_{ML}$ due to a bad sample. 100 is added in the denominator to keep the step size below 0.01 in the initial iterations, otherwise, larger step sizes (1, 0.5, 0.25, etc) may cause the weights to diverge from $w_{ML}$. This was not needed in the normal gradient descent case as sampling was not done and a constant step size of 0.0001 did the job.
+The weights corresponding to features given by stochastic gradient descent are as follows:
+\begin{center}
+    $w_{SGD}=(1.766, \ 3.522, \ 9.894)$
+\end{center}
+The solution is the same as the solution of the analytical method.
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.65\linewidth]{sgd_iterations.png}
+    \label{stochastic: iteration_plot}
+    \caption{Convergence of Stochastic Gradient Descent}
+\end{figure}
+From \textit{Figure 2} it is evident that the error does not reduce smoothly and in fact, increases many times randomly as the iterations proceed. When compared to the plot for gradient descent, we can find a similarity in the early iterations that the error reduces sharply but the difference is vivid for further iterations. This is because, in Stochastic Gradient Descent, we make an update to the weights just by considering a random sample of the data and sometimes it may happen that the direction of the gradient obtained from the sampled data may not be a descent direction, resulting in a jagged curve. Another difference is that the Stochastic Gradient Descent required 10000 iterations to converge to the solution as compared to just 200 iterations in the Gradient Descent.
+
+\subsection{Ridge Gradient Descent Solution}
+The Ridge Gradient Descent Algorithm was cross-validated for all integer values of $\lambda$ (regularization parameter) in the interval $[0, 40)$. The cross-validation model for each iteration was run for 1000 iterations and with a step size of 0.0001. The cross-validation error was calculated and \textit{Figure 3} highlights the error as a function of $\lambda$.
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.65\linewidth]{ridge_lambda_mse.png}
+    \label{ridge: lambda_plot}
+    \caption{Cross-Validation of Ridge Gradient Descent}
+\end{figure}
+It is observed that the error marginally reduces as we move from $\lambda=0$ to $\lambda=5$ and then continuously increases as we increase $\lambda$ further. $\lambda=0$ corresponds to normal gradient descent. The minimum error is obtained when $\lambda=3$. The weights corresponding to features given by ridge gradient descent when $\lambda=3$ are as follows:
+\begin{center}
+    $w_{RGD}=(1.759, \ 3.512, \ 9.865)$
+\end{center}
+Let's compare the performance of the solutions obtained by the Analytical Method and Ridge Gradient Descent by calculating the error on the test data:
+\begin{center}
+$w_{ML}=(1.766, \ 3.522, \ 9.894)$ \\
+$OLS \ Test \ Error: \ 66.005$ \\
+~\\
+$w_{RGD}=(1.759, \ 3.512, \ 9.865)$ \\
+$Ridge \ Test \ Error: \ 65.960$
+\end{center}
+We can see that the Ridge solution results in a smaller error for test data. Since both the cross-validation error and test error are lower for the Ridge solution, we can conclude that the Ridge solution is better than the Analytical Solution but not very significantly.
+
+\subsection{Kernel Regression Solution}
+Before going into the actual solution, let us visualize the relationship of the features with the output variable. This is easily done through a scatter plot which \textit{Figure 4} shows. 
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=1.3\linewidth, center]{features_target.png}
+    \caption{Scatter Plot of Features and Output}
+    \label{kernel: feature_target}
+\end{figure}
+
+We can see that both features are non-linearly related to the output variable and both scatter plots seem to show parabolic curvature. This brings us to the use of polynomial kernel methods to incorporate these relationships in our analysis. Kernels allow us to perform analysis in higher dimensions where non-linear relationships become linear without increasing much computational complexity of the method. 
+\begin{figure}[h!]
+    \centering
+    \includegraphics[width=0.55\linewidth]{kernel_degree_mse.png}
+    \caption{Cross-Validation of Kernel Regression}
+    \label{kernel: degree_plot}
+\end{figure}
+
+Cross-validation was used to find the best degree for the kernel method and it was found to be \verb|degree=2|, as we expected from the scatter plots. \textit{Figure 5} shows the cross-validation error as a function of the degree of the kernel applied. \verb|degree=1| corresponds to the standard least squares regression (OLS) method.
+We observe that the error goes to approximately 0 when the degree is increased from 1 to 2. Let's compare the performance of the solutions obtained by the Analytical Method and Kernel Regression (degree=2) by calculating the error on the test data:
+\begin{center}
+$OLS \ Test \ Error: \ 66.005$ \\
+~\\
+$Kernel \ Test \ Error: \ 0.010$
+\end{center}
+We can see that the Kernel solution results in negligible error for test data. This is because the Kernel method can capture non-linear relationships, in our case, second-order relationships between the output and the features which the OLS method can't. Hence, in this case, the Kernel method is significantly better than the OLS method. This fact is also backed by the notably lower cross-validation error and testing error of the Kernel solution when compared to the OLS  solution.
+
+\end{document}
