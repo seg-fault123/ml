@@ -3,9 +3,6 @@ import numpy as np
 import pandas as pd
 import scipy.sparse as sparse
 
-from sklearn.feature_extraction.text import CountVectorizer
-from sklearn.model_selection import train_test_split
-
 
 ### Functions for loading and creating the dataset
 
