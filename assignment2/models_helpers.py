@@ -305,9 +305,72 @@ def evaluate_model(model, vectorizer):
         predictions=model.predict(X)
         accuracy=(predictions==y).mean()*100
         result['Dataset %d'%(i+1)]=accuracy
-        print('-------')
         print('\tAccuracy on Dataset %d : %.3f'%(i+1, accuracy))
         print('\tSpam %% : %.3f'%(y.mean()*100))
         print('\tSize : %d'%X.shape[0])
         print('-------')
     return pd.Series(result)
+
+
+def genrate_splits(n, test_size, random_seed=None):
+    '''
+    This function yields split indices for training and validation sets of data base on the size of the dataset,
+    and the proportion of points that go into the validation set. Can be used for cross validation.
+
+    ### Parameters
+
+    `n` : the size of the dataset (total points)
+
+    `test_size` : the proportion of points that go into the validation subset.
+
+    `random_state` : for reproducible results
+
+    ### Returns
+
+    an iterator that yields a tuple of numpy 1-D arrays `(train, test)` where `train` is the integer indices
+    of the training subset, and `test` is the integer indices of validation subset.
+    '''
+    rng=np.random.default_rng(seed=random_seed)
+    index=np.arange(n)
+    sorted_index=index.copy()
+    rng.shuffle(index)
+    factor=int(n*test_size)+1
+    iterations=0
+    while (factor*iterations < index.shape[0]):
+        test_index=(sorted_index>=iterations*factor) & (sorted_index<(iterations+1)*factor)
+        train_index=~test_index
+        yield index[train_index], index[test_index]
+        iterations+=1
+   
+
+
+def cross_validate(X, y, model, test_size, random_seed=None):
+    '''
+    This function runs the cross validation algorithm for a given model and dataset.
+
+    ### Parameters
+
+    `X` : a sparse matrix (scipy.csr_matrix) with data points as rows and features as columns
+
+    `y` : a numpy 1-D array with labels 1 or 0.
+
+    `model` : a classification model that supports the `fit` and `predit` method.
+
+    `test_size` : the proportion of data points in a sigle fold of K-Fold cross validation
+
+    `random_state` : for reproducible results 
+
+    ### Returns
+
+    average of the accuracies on the validation set of each fold. 
+    '''
+    iterations=0
+    accuracy=0
+    for train_index, validation_index in genrate_splits(X.shape[0], test_size, random_seed):
+        X_train, X_valid, y_train, y_valid=X[train_index, :], X[validation_index, :], y[train_index], y[validation_index]
+        model.fit(X_train, y_train)
+        predictions=model.predict(X_valid)
+        accuracy+=(predictions==y_valid).mean()*100
+        iterations+=1
+
+    return accuracy/iterations
