@@ -259,7 +259,7 @@ class LogReg:
         
         ### Parameters
         
-        `X` : a sparse matrix (scipy.csr_matrix) with data points as rows and features as columns
+        `X` : a sparse matrix (scipy.sparse.csr_matrix) with data points as rows and features as columns
 
         `y` : a numpy 1-D array with labels 1 or 0.
         '''
@@ -314,7 +314,7 @@ def evaluate_model(model, vectorizer):
 
 def genrate_splits(n, test_size, random_seed=None):
     '''
-    This function yields split indices for training and validation sets of data base on the size of the dataset,
+    This function yields split indices for training and validation sets of data based on the size of the dataset,
     and the proportion of points that go into the validation set. Can be used for cross validation.
 
     ### Parameters
@@ -350,7 +350,7 @@ def cross_validate(X, y, model, test_size, random_seed=None):
 
     ### Parameters
 
-    `X` : a sparse matrix (scipy.csr_matrix) with data points as rows and features as columns
+    `X` : a sparse matrix (scipy.sparse.csr_matrix) with data points as rows and features as columns
 
     `y` : a numpy 1-D array with labels 1 or 0.
 
